@@ -5,7 +5,6 @@ import requests
 from flask import Flask, jsonify, request, current_app
 from flask_sqlalchemy import SQLAlchemy
 
-STRIPE_API_KEY = "sk_live_51H8x9KJ2eZvKYlo2C3fake4example5key6only7testing"
 
 db = SQLAlchemy()
 
