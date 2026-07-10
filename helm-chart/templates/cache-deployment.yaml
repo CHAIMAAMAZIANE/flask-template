@@ -1,0 +1,35 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-cache
+  labels:
+    app: {{ include "helm-chart.name" . }}-cache
+spec:
+  replicas: {{ .Values.cache.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-cache
+  template:
+    metadata:
+      labels:
+        app: {{ include "helm-chart.name" . }}-cache
+    spec:
+      containers:
+        - name: redis
+          image: "{{ .Values.cache.image.repository }}:{{ .Values.cache.image.tag }}"
+          imagePullPolicy: {{ .Values.cache.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: {{ .Values.cache.service.port }}
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}

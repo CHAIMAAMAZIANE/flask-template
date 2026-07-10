@@ -1,0 +1,48 @@
+﻿auth:
+  replicaCount: 1
+  image:
+    repository: auth-service
+    tag: latest
+    pullPolicy: Never
+  service:
+    port: 5001
+  env:
+    databaseUrl: "postgresql://user:password@monapp-flask-template-db:5432/db"
+    redisUrl: "redis://monapp-flask-template-cache:6379"
+    jwtSecret: "mysecret"
+    jwtAlgorithm: "HS256"
+    accessTokenExpires: "3600"
+
+cache:
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+
+db:
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: "15"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  env:
+    postgresUser: "user"
+    postgresPassword: "password"
+    postgresDb: "db"
+
+api:
+  replicaCount: 1
+  image:
+    repository: api-service
+    tag: latest
+    pullPolicy: Never
+  service:
+    port: 5000
+  env:
+    databaseUrl: "postgresql://user:password@monapp-flask-template-db:5432/db"
+    authUrl: "http://monapp-flask-template-auth:5001"

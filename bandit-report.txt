@@ -1,0 +1,53 @@
+Run started:2026-07-10 09:14:56.737041+00:00
+
+Test results:
+>> Issue: [B104:hardcoded_bind_all_interfaces] Possible binding to all interfaces.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-605 (https://cwe.mitre.org/data/definitions/605.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b104_hardcoded_bind_all_interfaces.html
+   Location: services\api\app.py:126:17
+125	    init_db(app)
+126	    app.run(host="0.0.0.0", port=5000)
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'Bearer'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html
+   Location: services\auth\app.py:66:20
+65	                    "access_token": token,
+66	                    "token_type": "Bearer",
+67	                    "expires_in": app.config["ACCESS_TOKEN_EXPIRES"],
+68	                }
+69	            ),
+70	            200,
+71	        )
+
+--------------------------------------------------
+>> Issue: [B104:hardcoded_bind_all_interfaces] Possible binding to all interfaces.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-605 (https://cwe.mitre.org/data/definitions/605.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b104_hardcoded_bind_all_interfaces.html
+   Location: services\auth\app.py:170:17
+169	    init_db(app)
+170	    app.run(host="0.0.0.0", port=5001)
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 229
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 1
+		Medium: 2
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 3
+		High: 0
+Files skipped (0):

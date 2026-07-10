@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monapp-ingress
+spec:
+  ingressClassName: nginx   # 👈 DOIT matcher kubectl get ingressclass
+  rules:
+    - host: monapp.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: monapp-flask-template-api
+                port:
+                  number: 5000

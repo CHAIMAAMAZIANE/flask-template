@@ -1,0 +1,41 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-api
+  labels:
+    app: {{ include "helm-chart.name" . }}-api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-api
+  template:
+    metadata:
+      labels:
+        app: {{ include "helm-chart.name" . }}-api
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z {{ include "helm-chart.fullname" . }}-db {{ .Values.db.service.port }}; do echo waiting for db; sleep 2; done']
+        - name: wait-for-auth
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z {{ include "helm-chart.fullname" . }}-auth {{ .Values.auth.service.port }}; do echo waiting for auth; sleep 2; done']
+      containers:
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: {{ .Values.api.service.port }}
+          env:
+            - name: DATABASE_URL
+              value: {{ .Values.api.env.databaseUrl | quote }}
+            - name: AUTH_URL
+              value: {{ .Values.api.env.authUrl | quote }}

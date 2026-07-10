@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api-container
+          image: flask-template-api:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: AUTH_URL
+              value: "http://auth:5001"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:postgres@db:5432/appdb"

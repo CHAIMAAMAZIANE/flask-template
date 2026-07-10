@@ -1,0 +1,13 @@
+﻿api:
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+    tag: v4
+
+auth:
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+    tag: v5
+  env:
+    jwtSecret: "dev-secret-not-for-prod"

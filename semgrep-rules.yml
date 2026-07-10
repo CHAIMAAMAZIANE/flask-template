@@ -1,0 +1,14 @@
+rules:
+  - id: hardcoded-jwt-secret-default
+    languages: [python]
+    severity: ERROR
+    message: >
+      Une valeur par défaut est fournie pour un secret JWT via os.getenv().
+      Si la variable d'environnement réelle n'est pas définie, l'application
+      démarrera silencieusement avec un secret faible et prévisible,
+      permettant à un attaquant de forger des tokens JWT valides.
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A02:2021 - Cryptographic Failures"
+    patterns:
+      - pattern: os.getenv("JWT_SECRET", "...")

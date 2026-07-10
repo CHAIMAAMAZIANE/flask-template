@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-auth
+  labels:
+    app: {{ include "helm-chart.name" . }}-auth
+spec:
+  replicas: {{ .Values.auth.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-auth
+  template:
+    metadata:
+      labels:
+        app: {{ include "helm-chart.name" . }}-auth
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z {{ include "helm-chart.fullname" . }}-db {{ .Values.db.service.port }}; do echo waiting for db; sleep 2; done']
+      containers:
+        - name: auth
+          image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: {{ .Values.auth.service.port }}
+          env:
+            - name: DATABASE_URL
+              value: {{ .Values.auth.env.databaseUrl | quote }}
+            - name: REDIS_URL
+              value: {{ .Values.auth.env.redisUrl | quote }}
+            - name: JWT_SECRET
+              value: {{ .Values.auth.env.jwtSecret | quote }}
+            - name: JWT_ALGORITHM
+              value: {{ .Values.auth.env.jwtAlgorithm | quote }}
+            - name: ACCESS_TOKEN_EXPIRES
+              value: {{ .Values.auth.env.accessTokenExpires | quote }}

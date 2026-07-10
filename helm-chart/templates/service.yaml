@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-auth
+  labels:
+    app: {{ include "helm-chart.name" . }}-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "helm-chart.name" . }}-auth
+  ports:
+    - protocol: TCP
+      port: {{ .Values.auth.service.port }}
+      targetPort: {{ .Values.auth.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-cache
+  labels:
+    app: {{ include "helm-chart.name" . }}-cache
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "helm-chart.name" . }}-cache
+  ports:
+    - protocol: TCP
+      port: {{ .Values.cache.service.port }}
+      targetPort: {{ .Values.cache.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-db
+  labels:
+    app: {{ include "helm-chart.name" . }}-db
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "helm-chart.name" . }}-db
+  ports:
+    - protocol: TCP
+      port: {{ .Values.db.service.port }}
+      targetPort: {{ .Values.db.service.port }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm-chart.fullname" . }}-api
+  labels:
+    app: {{ include "helm-chart.name" . }}-api
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "helm-chart.name" . }}-api
+  ports:
+    - protocol: TCP
+      port: {{ .Values.api.service.port }}
+      targetPort: {{ .Values.api.service.port }}

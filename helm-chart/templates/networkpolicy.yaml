@@ -1,0 +1,130 @@
+﻿apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: {{ .Values.api.service.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-auth
+      ports:
+        - port: {{ .Values.auth.service.port }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-db
+      ports:
+        - port: {{ .Values.db.service.port }}
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-auth
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-api
+      ports:
+        - port: {{ .Values.auth.service.port }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-db
+      ports:
+        - port: {{ .Values.db.service.port }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-cache
+      ports:
+        - port: {{ .Values.cache.service.port }}
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-api
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-auth
+      ports:
+        - port: {{ .Values.db.service.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cache-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "helm-chart.name" . }}-cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "helm-chart.name" . }}-auth
+      ports:
+        - port: {{ .Values.cache.service.port }}
