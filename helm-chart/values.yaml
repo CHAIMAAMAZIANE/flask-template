@@ -44,5 +44,5 @@ db:
     port: 5432
   env:
     postgresUser: "user"
-    postgresPassword: "password"
+    postgresPassword: ""
     postgresDb: "db"

@@ -1,0 +1,401 @@
+﻿---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-template-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 5000
+---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-template-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: flask-template-auth
+      ports:
+        - port: 5001
+    - to:
+        - podSelector:
+            matchLabels:
+              app: flask-template-db
+      ports:
+        - port: 5432
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auth-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-template-auth
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: flask-template-api
+      ports:
+        - port: 5001
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: flask-template-db
+      ports:
+        - port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: flask-template-cache
+      ports:
+        - port: 6379
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-template-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: flask-template-api
+        - podSelector:
+            matchLabels:
+              app: flask-template-auth
+      ports:
+        - port: 5432
+---
+# Source: flask-template/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cache-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-template-cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: flask-template-auth
+      ports:
+        - port: 6379
+---
+# Source: flask-template/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monapp-flask-template-auth
+  labels:
+    app: flask-template-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-template-auth
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+---
+# Source: flask-template/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monapp-flask-template-cache
+  labels:
+    app: flask-template-cache
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-template-cache
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+# Source: flask-template/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monapp-flask-template-db
+  labels:
+    app: flask-template-db
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-template-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+# Source: flask-template/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: monapp-flask-template-api
+  labels:
+    app: flask-template-api
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-template-api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+# Source: flask-template/templates/api-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monapp-flask-template-api
+  labels:
+    app: flask-template-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-template-api
+  template:
+    metadata:
+      labels:
+        app: flask-template-api
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z monapp-flask-template-db 5432; do echo waiting for db; sleep 2; done']
+        - name: wait-for-auth
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z monapp-flask-template-auth 5001; do echo waiting for auth; sleep 2; done']
+      containers:
+        - name: api
+          image: "localhost:5050/flask-template-api:v4"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://user:password@monapp-flask-template-db:5432/db"
+            - name: AUTH_URL
+              value: "http://monapp-flask-template-auth:5001"
+---
+# Source: flask-template/templates/auth-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monapp-flask-template-auth
+  labels:
+    app: flask-template-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-template-auth
+  template:
+    metadata:
+      labels:
+        app: flask-template-auth
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z monapp-flask-template-db 5432; do echo waiting for db; sleep 2; done']
+      containers:
+        - name: auth
+          image: "localhost:5050/flask-template-auth:v5"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 5001
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://user:password@monapp-flask-template-db:5432/db"
+            - name: REDIS_URL
+              value: "redis://monapp-flask-template-cache:6379"
+            - name: JWT_SECRET
+              value: "dev-secret-not-for-prod"
+            - name: JWT_ALGORITHM
+              value: "HS256"
+            - name: ACCESS_TOKEN_EXPIRES
+              value: "3600"
+---
+# Source: flask-template/templates/cache-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monapp-flask-template-cache
+  labels:
+    app: flask-template-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-template-cache
+  template:
+    metadata:
+      labels:
+        app: flask-template-cache
+    spec:
+      containers:
+        - name: redis
+          image: "redis:7-alpine"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+# Source: flask-template/templates/db-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monapp-flask-template-db
+  labels:
+    app: flask-template-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-template-db
+  template:
+    metadata:
+      labels:
+        app: flask-template-db
+    spec:
+      containers:
+        - name: postgres
+          image: "postgres:15"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "user"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_DB
+              value: "db"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run/postgresql
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+---
+# Source: flask-template/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monapp-ingress
+spec:
+  ingressClassName: nginx   # ­ƒæê DOIT matcher kubectl get ingressclass
+  rules:
+    - host: monapp.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: monapp-flask-template-api
+                port:
+                  number: 5000

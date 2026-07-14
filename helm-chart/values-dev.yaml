@@ -2,12 +2,11 @@
   replicaCount: 1
   image:
     pullPolicy: IfNotPresent
-    tag: v4
-
+    tag: v8
 auth:
   replicaCount: 1
   image:
     pullPolicy: IfNotPresent
-    tag: v5
+    tag: v10
   env:
     jwtSecret: "dev-secret-not-for-prod"

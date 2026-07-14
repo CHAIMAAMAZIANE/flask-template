@@ -98,6 +98,15 @@ def create_app(test_config=None):
         app.redis.delete(token_key(validation["payload"]["jti"]))
         return jsonify({"message": "logged out"}), 200
 
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Content-Security-Policy'] = "default-src 'self'"
+        response.headers['Permissions-Policy'] = "geolocation=(), microphone=(), camera=()"
+        response.headers['Cross-Origin-Resource-Policy'] = "same-origin"
+        response.headers.pop('Server', None)
+        return response
+
     return app
 
 

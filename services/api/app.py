@@ -88,6 +88,16 @@ def create_app(test_config=None):
     def profile(user):
         return jsonify(user), 200
 
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Content-Security-Policy'] = "default-src 'self'"
+        response.headers['Permissions-Policy'] = "geolocation=(), microphone=(), camera=()"
+        response.headers['Cross-Origin-Resource-Policy'] = "same-origin"
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['Server'] = ''
+        return response
+
     return app
 
 

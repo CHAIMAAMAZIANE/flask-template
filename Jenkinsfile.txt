@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('1. Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('2. Build') {
+            steps {
+                echo 'Building Docker images...'
+                sh 'docker build -t localhost:5050/flask-template-api:jenkins-test services/api'
+                sh 'docker build -t localhost:5050/flask-template-auth:jenkins-test services/auth'
+            }
+        }
+
+        stage('3. SAST + Secrets') {
+            steps {
+                echo 'Running Bandit...'
+                sh 'pip install bandit --break-system-packages || true'
+                sh 'python3 -m bandit -r services -f txt || true'
+            }
+        }
+
+        stage('4. IaC Scan') {
+            steps {
+                echo 'Running Checkov...'
+                sh 'pip install checkov --break-system-packages || true'
+                sh 'checkov -f services/api/Dockerfile || true'
+            }
+        }
+
+        stage('5. Push Images') {
+            steps {
+                echo 'Pushing images...'
+                sh 'docker push localhost:5050/flask-template-api:jenkins-test'
+                sh 'docker push localhost:5050/flask-template-auth:jenkins-test'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed - check logs above.'
+        }
+    }
+}

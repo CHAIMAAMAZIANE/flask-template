@@ -1,0 +1,11 @@
+secrets scan results:
+
+Passed checks: 0, Failed checks: 1, Skipped checks: 0
+
+Check: CKV_SECRET_4: "Basic Auth Credentials"
+	FAILED for resource: 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8
+	File: /rendered-manifests.yaml:242-243
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/secrets-policies/secrets-policy-index/git-secrets-4
+
+		242 |               value: "postgresql://user:pa**********@monapp-flask-template-db:5432/db"
+

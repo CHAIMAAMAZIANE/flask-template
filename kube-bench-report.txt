@@ -1,0 +1,10 @@
+﻿0 checks FAIL
+34 checks WARN
+0 checks INFO
+
+== Summary total ==
+63 checks PASS
+12 checks FAIL
+56 checks WARN
+0 checks INFO
+
