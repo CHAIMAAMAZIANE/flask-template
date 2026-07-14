@@ -19,3 +19,10 @@ instance/
 cosign.key
 
 flask-template-api.tar
+
+trivy-bin/
+syft-bin/
+gitleaks-bin/
+cosign.exe
+*.zip
+*.tar
